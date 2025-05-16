@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Beautiful Weather App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ===== NEW BEAUTIFUL CSS ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body, html {
+      height: 100%;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(to bottom, #87ceeb, #e0f7ff);
+      overflow-x: hidden;
+      color: #333;
+    }
+    
+    /* Sun Animation */
+    .sun {
+      position: fixed;
+      top: 50px;
+      right: 40px;
+      width: 100px;
+      height: 100px;
+      background: radial-gradient(circle at center, #fff89a 40%, #fbbf24 70%);
+      border-radius: 50%;
+      box-shadow: 0 0 40px 10px #fbbf24cc;
+      animation: sunRotate 30s linear infinite;
+      z-index: 1;
+    }
+    
+    /* Cloud Animations */
+    .cloud {
+      position: fixed;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow:
+        30px 10px 0 10px #fff,
+        60px 15px 0 15px #fff,
+        90px 10px 0 10px #fff;
+      opacity: 0.85;
+      filter: drop-shadow(2px 5px 3px rgba(0,0,0,0.1));
+      animation: cloudMove 60s linear infinite;
+      z-index: 1;
+    }
+    
+    /* Weather Card Styling */
+    .container {
+      max-width: 450px;
+      margin: 0 auto;
+      padding: 2rem;
+      position: relative;
+      z-index: 10;
+      text-align: center;
+    }
+    
+    .card {
+      background: rgba(255, 255, 255, 0.85);
+      padding: 2rem;
+      border-radius: 25px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+    
+    /* ===== ORIGINAL FUNCTIONALITY ===== */
+    input {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      border-radius: 30px;
+      border: none;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    
+    button {
+      padding: 0.8rem 2rem;
+      border: none;
+      background: #00bcd4;
+      color: white;
+      border-radius: 30px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0,188,212,0.5);
+    }
+    
+    .result {
+      margin-top: 2rem;
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    
+    .result.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    /* Animations */
+    @keyframes sunRotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    @keyframes cloudMove {
+      0% { left: -150px; }
+      100% { left: 110vw; }
+    }
+  </style>
+</head>
+<body>
+  <!-- New Animated Elements -->
+  <div class="sun"></div>
+  <div class="cloud" style="top: 100px; left: -150px; width: 100px; height: 60px;"></div>
+  <div class="cloud" style="top: 180px; left: -200px; width: 110px; height: 70px; animation-delay: 10s;"></div>
+  <div class="cloud" style="top: 230px; left: -250px; width: 90px; height: 55px; animation-delay: 25s; opacity: 0.7;"></div>
+
+  <!-- Original App Structure -->
+  <div class="container">
+    <div class="card">
+      <h1>Weather Forecast</h1>
+      <input type="text" id="city" placeholder="Enter city name" />
+      <button onclick="getWeather()">Check Weather</button>
+      <div id="weatherResult" class="result"></div>
+    </div>
+  </div>
+
+  <script>
+    // Original functionality with small improvements
+    window.onload = function() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          
+          fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=9eeaae381073aae55b8b483c121408a8&units=metric`)
+            .then(res => res.json())
+            .then(data => {
+              document.getElementById("city").value = data.name;
+              displayWeather(data);
+            });
+        });
+      }
+    }
+
+    function getWeather() {
+      const city = document.getElementById("city").value;
+      if (!city) return alert("Please enter a city name");
+
+      fetch("/weather", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ city })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          document.getElementById("weatherResult").innerHTML = `<p>${data.error}</p>`;
+          document.getElementById("weatherResult").classList.add("show");
+        } else {
+          displayWeather(data);
+        }
+      });
+    }
+
+    function displayWeather(data) {
+      const result = document.getElementById("weatherResult");
+      result.innerHTML = `
+        <h2>${data.city}</h2>
+        <img src="https://openweathermap.org/img/wn/${data.icon}@2x.png" style="width:100px; animation: float 4s ease-in-out infinite;">
+        <p><strong>${data.temperature}°C</strong></p>
+        <p>${data.description}</p>
+      `;
+      result.classList.add("show");
+      
+      // Change background based on weather
+      if (data.description.toLowerCase().includes("rain")) {
+        document.body.style.background = "linear-gradient(to bottom, #4b6cb7, #182848)";
+      } else {
+        document.body.style.background = "linear-gradient(to bottom, #87ceeb, #e0f7ff)";
+      }
+    }
+
+    // Add floating animation for weather icon
+    document.head.insertAdjacentHTML("beforeend", `
+      <style>
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+      </style>
+    `);
+  </script>
+</body>
+</html>
